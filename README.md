@@ -6,6 +6,8 @@
 
 https://nomadcoders.co/fullstack-gpt/lobby
 
+    
+- https://blog.deeplink.kr/?p=942 에서 venv로 가상환경 세팅하는걸 알수있다.  
   
 - 최초 구성시 https://platform.openai.com/ 에서 API 키값을 받아와서 
 프로젝트 안에 env 파일 생성후에 OPEN_API_KEY="받아온 키" 세팅해야 함.
