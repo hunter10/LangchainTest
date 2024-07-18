@@ -1,19 +1,22 @@
 import streamlit as st
-from datetime import datetime
 
-today = datetime.today().strftime("%H:%M:%S")
+st.set_page_config(
+    page_title="FullstackGPT Home",
+    page_icon="🤖",
+)
+st.title("FullstackGPT Home")
 
-st.title(today)
+with st.sidebar:
+    st.title("sidebar title")
+    st.text_input("xxx")
 
-model = st.selectbox("Choose your mode", ("GPT-3", "GPT-4"),)
-#st.write(model)
-if model == "GPT-3":
-    st.write("cheap")
-else:
-    st.write("not cheap")
+tab_one, tab_two, tab_three = st.tabs(["A", "B", "C"])
 
-    name = st.text_input("What is your name")
-    st.write(name)
+with tab_one:
+    st.write('a')
 
-    value = st.slider("temperture", min_value=0.1, max_value=1.0,)
-    st.write(value)
+with tab_two:
+    st.write('b')
+
+with tab_three:
+    st.write('c')
