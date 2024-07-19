@@ -7,12 +7,15 @@
 - platform.openaio.com 계정에 꼭 금액 limit를 걸어야 함.
 - 파이썬 가상환경으로 작업
 - .gitignore 세팅할때 env/는 추가하기 때문에 새로 세팅하면 가상환경 세팅작업을 해줘야 함.
+- 이 프로젝트를 세팅하는데 필요한 패키지들은 requirements.txt에 있다.
+- 가상환경하에서 pip install -r requirements.txt를 실행한다.
 
 ### 가상환경 세업 (venv)
-- 생성 : python -m venv ./evn 
+- 생성 : python -m venv ./env 
 - 활성(맥) : source <venv>/bin/activate
 - 활성(윈) : C:\> <venv>\Scripts\activate.bat
 - 활성(PS) : PS C:\> <venv>\Scripts\Activate.ps1
+- 비활성화 : deactivate
 
 https://nomadcoders.co/fullstack-gpt/lobby
 
