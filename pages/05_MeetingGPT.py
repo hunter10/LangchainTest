@@ -78,7 +78,7 @@ with st.sidebar:
 if video:
     chunks_folder = "./.cache/chunks"
 
-    with st.status("Loading video..."):
+    with st.status("Loading video...") as status:
         video_content = video.read()
         video_path = f"./.cache/{video.name}"
         audio_path = video_path.replace("mp4", "mp3")
@@ -86,9 +86,15 @@ if video:
         print(video_path)
         with open(video_path, "wb") as f:
             f.write(video_content)
-    with st.status("Extracting audio..."):
+        status.update(label="Extracting audio...")
         extract_audio_from_video(video_path)
-    with st.status("Cutting audio segments..."):
+        status.update(label="Cutting audio segments...")
         cut_audio_in_chunk(audio_path, 10, chunks_folder)
-    with st.status("Transcribing audio..."):
+        status.update(label="Transcribing audio...")
         transcribe_chunks(chunks_folder, transcript_path)
+
+transcript_tab, summary_tab, qa_tab = st.tabs(["Transcript", "Summary", "Q&A",])
+
+with transcript_tab:
+    with open(transcript_path, "r") as file:
+        st.write(file.read())
