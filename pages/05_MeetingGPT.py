@@ -16,10 +16,13 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from langchain.vectorstores.faiss import FAISS
 from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
+from langchain.schema.runnable.passthrough import RunnablePassthrough
+from langchain.schema.runnable.base import RunnableLambda
 
 
 llm = ChatOpenAI(
     temperature = 0.1,
+    streaming=True,
 )
 
 has_transcript = os.path.exists("./.cache/podcast.txt")
@@ -28,6 +31,9 @@ splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
             chunk_size=800,
             chunk_overlap=100,
         )
+
+def format_docs(docs):
+    return "\n\n".join(document.page_content for document in docs)
 
 @st.cache_data()
 def embed_file(file_path):
@@ -181,7 +187,34 @@ with summary_tab:
                 
         st.write(summary)
 
-with qa_tab:
-    retriever = embed_file(transcript_path)
-    docs = retriever.invoke("do they talk about marucs aurelius?")
-    st.write(docs)
+    with qa_tab:
+        retriever = embed_file(transcript_path)
+
+        qa_prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    """
+            Answer the question using ONLY the following context. If you don't know the answer just say you don't know. DON'T make anything up.
+            
+            Context: {context}
+            """,
+                ),
+                ("human", "{question}"),
+            ]
+        )
+
+        message = st.text_input("Ask anything about your video...")
+
+        if message:
+            chain = (
+                {
+                    "context": retriever | RunnableLambda(format_docs),
+                    "question": RunnablePassthrough(),
+                }
+                | qa_prompt
+                | llm
+            )
+
+            with st.chat_message("ai"):
+                chain.invoke(message).content
