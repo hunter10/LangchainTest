@@ -1,6 +1,7 @@
 # 샘플영상
 # https://www.youtube.com/watch?v=CWvOKHNeLMI
 
+from langchain.storage import LocalFileStore
 import streamlit as st
 import subprocess
 import math
@@ -14,7 +15,7 @@ from langchain.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import StrOutputParser
 from langchain.vectorstores.faiss import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings import CacheBackedEmbeddings, OpenAIEmbeddings
 
 
 llm = ChatOpenAI(
@@ -22,6 +23,28 @@ llm = ChatOpenAI(
 )
 
 has_transcript = os.path.exists("./.cache/podcast.txt")
+
+splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=800,
+            chunk_overlap=100,
+        )
+
+@st.cache_data()
+def embed_file(file_path):
+    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
+    splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+        chunk_size=800,
+        chunk_overlap=100,
+    )
+    loader = TextLoader(file_path)
+    docs = loader.load_and_split(text_splitter=splitter)
+    embeddings = OpenAIEmbeddings()
+    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
+
+    # 이부분에서 비용 발생 - 조심해야 함 (실행할때마다)
+    vectorstore = FAISS.from_documents(docs, cached_embeddings) 
+    retriever = vectorstore.as_retriever()
+    return retriever
 
 # 비디오에서 오디오 추출
 @st.cache_data()
@@ -116,10 +139,7 @@ with summary_tab:
 
     if start:
         loader = TextLoader(transcript_path)
-        splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=800,
-            chunk_overlap=100,
-        )
+        
         docs = loader.load_and_split(text_splitter=splitter)
         #st.write(len(docs))
         first_summary_prompt = ChatPromptTemplate.from_template(""" 
@@ -162,4 +182,6 @@ with summary_tab:
         st.write(summary)
 
 with qa_tab:
-    pass
+    retriever = embed_file(transcript_path)
+    docs = retriever.invoke("do they talk about marucs aurelius?")
+    st.write(docs)
