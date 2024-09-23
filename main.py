@@ -2,57 +2,59 @@ from typing import Any, Dict
 from fastapi import Body, FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+
+from pinecone import Pinecone
+from langchain_openai import OpenAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+
+load_dotenv()
+
+pc = Pinecone(api_key="PINECONE_API_KEY")
+
+embeddings = OpenAIEmbeddings()
+
+vector_store = PineconeVectorStore.from_existing_index(
+    "recipes",
+    embeddings,
+)
 
 app = FastAPI(
-    title="Nicolacus Maximus Quote Giver",
-    description="Get a real quote said by Nicolacus Maximus himself.",
+    title="ChefGPT. The best provider of Indian Recipes in the world.",
+    description="Give ChefGPT a couple of ingredients and it will give you recipes in return.",
     servers=[
-        {"url":"https://textbooks-purchased-pledge-aberdeen.trycloudflare.com"}
+        {"url":"https://encouraging-amy-oasis-speakers.trycloudflare.com"}
     ]
 )
 
-class Quote(BaseModel):
-    quote: str = Field(description="The quote that Nicolacus Maximus said.")
-    year: int = Field(description="The year when Nicolacus Maximus said the quote.")
+class Document(BaseModel):
+    page_content: str
 
 @app.get(
-    "/quote", 
-    summary="Returns a random quote by Nicolacus Maximus",
-    description="Upon receiving a GET request this endpoint will return a real quiote said by Nicolacus Maximus himself.",
-    response_description="A Quote object that contains the quote said by Nicolacus Maximus and the date when the quote was said.",
-    response_model=Quote,
+    "/recipes", 
+    summary="Returns a list of recipes.",
+    description="Upon receiving an ingredient, this endpoint will return a list of recipes that contain that ingredient.",
+    response_description="A Document object that contains the recipe and preparation instructions.",
+    response_model=list[Document],
     # openapi_extra={
-    #     "x-openai-isConsequential":True,
+    #      "x-openai-isConsequential":True,
     # },
 )
 
-def get_quote(request: Request):
-    print(request.headers)
-    return {
-        "quote": "Life is short so eat it all.",
-        "year": 1950,
-    }
+def get_recipes(ingredient: str):
+    docs = vector_store.similarity_search(ingredient)
+    return docs
 
 # 가짜 DB
 user_token_db = {
     "ABCDEF": "nico"
 }
 
-#https://textbooks-purchased-pledge-aberdeen.trycloudflare.com/authorize?
-# response_type=code&
-# client_id=client123&
-# redirect_uri=https%3A%2F%2Fchat.openai.com%2Faip%2Fg-02a2ab8ee544d0544e6e84e87e8163caabb3907e%2Foauth%2Fcallback&state=2eb26ca7-8560-4172-b985-e2f7f860cf7b&
-# scope=user%3Aread%2Cuser%3Adelete
-@app.get("/authorize", response_class=HTMLResponse,)
+@app.get("/authorize", 
+         response_class=HTMLResponse,
+         include_in_schema=False,
+)
 def handle_authorize(client_id:str, redirect_uri:str, state:str):
-    # print( 
-    #       client_id, 
-    #       redirect_uri,  
-    #       state)
-    # return {
-    #     "ok": True,
-    # }
-    
     return f"""
     <html>
         <head>
@@ -60,20 +62,22 @@ def handle_authorize(client_id:str, redirect_uri:str, state:str):
         </head>
         <body>
             <h1>Log Into Nicolacus Maximus</h1>
-            <a href="{redirect_uri}?code=ABCDEF&state={state}">Authorize Nicolacus 
-            Maximus GPT</a>
+            <a href="{redirect_uri}?code=ABCDEF&state={state}">Authorize Nicolacus Maximus GPT</a>
         </body>
     </html>
     """
 
-@app.post("/token")
-# 뭘 보내는지 확인하기 위함
-# def handle_token(payload: Any = Body(None)):
-#     print(payload)
-#     return {"x":"x"}
+@app.post("/token", 
+          include_in_schema=False,
+)
 
 def handle_token(code = Form(...)):
     print(code)
     return {
         "access_token": user_token_db[code]
     }
+
+
+
+
+
