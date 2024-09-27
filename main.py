@@ -23,7 +23,7 @@ app = FastAPI(
     title="ChefGPT. The best provider of Indian Recipes in the world.",
     description="Give ChefGPT a couple of ingredients and it will give you recipes in return.",
     servers=[
-        {"url":"https://encouraging-amy-oasis-speakers.trycloudflare.com"}
+        {"url":"https://exists-meets-lucy-gc.trycloudflare.com"}
     ]
 )
 
